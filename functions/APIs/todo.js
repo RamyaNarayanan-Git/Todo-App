@@ -2,6 +2,7 @@ const { request } = require('express');
 const { db } = require('../util/admin.js');
 exports.getAllTodos = (request, response) => {
     db.collection('todos')
+        .where('username', '==', request.user.username)
         .orderBy('createdAt', 'desc')
         .get()
         .then((data) => {
@@ -33,6 +34,7 @@ exports.postOneTodo = (request, response) => {
     }
 
     const newTodoItem = {
+        username: request.user.username,
         title:request.body.title,
         body: request.body.body,
         createdAt: new Date().toISOString()
@@ -56,6 +58,9 @@ exports.deleteTodo = (request, response) => {
     document
         .get()
         .then((doc) => {
+            if(doc.data().username !== request.user.username){
+                return response.status(403).json({error:"UnAuthorized"})
+           }
             if (!doc.exists) {
                 return response.status(404).json({ error: 'Todo not found' })
             }
